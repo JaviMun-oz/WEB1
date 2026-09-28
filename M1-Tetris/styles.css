@@ -1,0 +1,23 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(10, 24px);
+    width: max-content;
+    gap: 1px;
+    padding: 1px;
+    background-color: #566176;
+}
+
+.cell {
+    width: 24px;
+    height: 24px;
+    background-color: #182235;
+}
+
+.piece {
+    background-color: #b574f2;
+}
