@@ -6,6 +6,9 @@ const test = document.querySelector("#test");
 const response = document.querySelector("#response");
 const marker = document.querySelector("#marker");
 
+let attempts = 0;
+marker.textContent = `Attempts: ${attempts}`;
+
 test.addEventListener("click", () => {
     const guess = Number(attempt.value);
 
@@ -14,8 +17,11 @@ test.addEventListener("click", () => {
         return;
     }
 
+    attempts += 1;
+    marker.textContent = `Attempts: ${attempts}`;
+
     if (guess === secret) {
-        response.textContent = "Correct! You guessed the secret number.";
+        response.textContent = `Correct! You guessed the secret number in ${attempts} attempts.`;
     } else if (guess < secret) {
         response.textContent = "Too low! Try a higher number.";
     } else if (guess > secret) {
