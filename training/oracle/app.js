@@ -22,6 +22,7 @@ test.addEventListener("click", () => {
 
     if (guess === secret) {
         response.textContent = `Correct! You guessed the secret number in ${attempts} attempts.`;
+        test.disabled = true;
     } else if (guess < secret) {
         response.textContent = "Too low! Try a higher number.";
     } else if (guess > secret) {
