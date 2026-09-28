@@ -8,7 +8,19 @@ const marker = document.querySelector("#marker");
 
 test.addEventListener("click", () => {
     const guess = Number(attempt.value);
-    response.textContent = `You said: ${guess}`;
+
+    if (attempt.value === "" || Number.isNaN(guess) || guess < 1 || guess > 100) {
+        response.textContent = "Please enter a number between 1 and 100.";
+        return;
+    }
+
+    if (guess === secret) {
+        response.textContent = "Correct! You guessed the secret number.";
+    } else if (guess < secret) {
+        response.textContent = "Too low! Try a higher number.";
+    } else if (guess > secret) {
+        response.textContent = "Too high! Try a lower number.";
+    }
 });
 
 console.log(
