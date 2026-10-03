@@ -40,3 +40,35 @@ function drawBoard() {
 }
 
 drawBoard();
+
+const DROP_INTERVAL = 500;
+
+function dropPiece() {
+    // The piece can fall while its bottom is above the last board row.
+    if (activePiece.y + activePiece.shape.length < ROWS) {
+        activePiece.y += 1;
+        drawBoard();
+    } else {
+        clearInterval(fallTimer);
+    }
+}
+
+const fallTimer = setInterval(dropPiece, DROP_INTERVAL);
+
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+        return;
+    }
+
+    event.preventDefault();
+
+    const direction = event.key === "ArrowLeft" ? -1 : 1;
+    const nextX = activePiece.x + direction;
+    const pieceWidth = activePiece.shape[0].length;
+
+    // Allow the move only if the whole piece stays inside the board.
+    if (nextX >= 0 && nextX + pieceWidth <= COLUMNS) {
+        activePiece.x = nextX;
+        drawBoard();
+    }
+});
