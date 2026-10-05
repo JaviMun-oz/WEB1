@@ -50,6 +50,47 @@ function createRandomPiece() {
 
 const activePiece = createRandomPiece();
 
+function canPlace(shape, x, y) {
+    for (let row = 0; row < shape.length; row += 1) {
+        for (let column = 0; column < shape[row].length; column += 1) {
+            if (shape[row][column] === 0) {
+                continue;
+            }
+
+            const boardX = x + column;
+            const boardY = y + row;
+
+            // Check bounds before reading the board array.
+            if (boardX < 0 || boardX >= COLUMNS || boardY < 0 || boardY >= ROWS) {
+                return false;
+            }
+            if (board[boardY][boardX] !== 0) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function rotatePiece() {
+    const shape = activePiece.shape;
+    // Columns become rows, read from bottom to top for clockwise rotation.
+    const rotated = Array.from({ length: shape[0].length }, (_, column) =>
+        shape.map(row => row[column]).reverse()
+    );
+
+    // Try the current position first, then nearby horizontal positions.
+    for (const offset of [0, -1, 1, -2, 2, -3, 3]) {
+        const nextX = activePiece.x + offset;
+        if (canPlace(rotated, nextX, activePiece.y)) {
+            activePiece.shape = rotated;
+            activePiece.x = nextX;
+            drawBoard();
+            return;
+        }
+    }
+}
+
 function drawBoard() {
     boardElement.textContent = "";
 
@@ -80,30 +121,29 @@ drawBoard();
 const DROP_INTERVAL = 500;
 
 function dropPiece() {
-    // The piece can fall while its bottom is above the last board row.
-    if (activePiece.y + activePiece.shape.length < ROWS) {
+    if (canPlace(activePiece.shape, activePiece.x, activePiece.y + 1)) {
         activePiece.y += 1;
         drawBoard();
-    } else {
-        clearInterval(fallTimer);
     }
 }
 
 const fallTimer = setInterval(dropPiece, DROP_INTERVAL);
 
 document.addEventListener("keydown", (event) => {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "ArrowUp") {
         return;
     }
 
     event.preventDefault();
 
+    if (event.key === "ArrowUp") {
+        rotatePiece();
+        return;
+    }
+
     const direction = event.key === "ArrowLeft" ? -1 : 1;
     const nextX = activePiece.x + direction;
-    const pieceWidth = activePiece.shape[0].length;
-
-    // Allow the move only if the whole piece stays inside the board.
-    if (nextX >= 0 && nextX + pieceWidth <= COLUMNS) {
+    if (canPlace(activePiece.shape, nextX, activePiece.y)) {
         activePiece.x = nextX;
         drawBoard();
     }
