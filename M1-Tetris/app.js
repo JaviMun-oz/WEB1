@@ -5,14 +5,50 @@ const boardElement = document.querySelector("#board");
 // Each row is a separate array. Zero means an empty cell.
 const board = Array.from({ length: ROWS }, () => Array(COLUMNS).fill(0));
 
-const activePiece = {
-    shape: [
+const TETROMINOES = {
+    I: [[1, 1, 1, 1]],
+    O: [
+        [1, 1],
+        [1, 1]
+    ],
+    T: [
         [0, 1, 0],
         [1, 1, 1]
     ],
-    x: 3,
-    y: 0
+    S: [
+        [0, 1, 1],
+        [1, 1, 0]
+    ],
+    Z: [
+        [1, 1, 0],
+        [0, 1, 1]
+    ],
+    J: [
+        [1, 0, 0],
+        [1, 1, 1]
+    ],
+    L: [
+        [0, 0, 1],
+        [1, 1, 1]
+    ]
 };
+
+function createRandomPiece() {
+    const types = Object.keys(TETROMINOES);
+    // The browser initializes Math.random(); no fixed seed is supplied.
+    const type = types[Math.floor(Math.random() * types.length)];
+    // Copy each row so changes to this piece won't change the definitions.
+    const shape = TETROMINOES[type].map(row => [...row]);
+
+    return {
+        type,
+        shape,
+        x: Math.floor((COLUMNS - shape[0].length) / 2),
+        y: 0
+    };
+}
+
+const activePiece = createRandomPiece();
 
 function drawBoard() {
     boardElement.textContent = "";
