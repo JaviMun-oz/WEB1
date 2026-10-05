@@ -23,6 +23,10 @@ body {
     background-color: #182235;
 }
 
-.piece {
-    background-color: #b574f2;
-}
+.piece-I { background-color: #00d9e8; }
+.piece-O { background-color: #f5d800; }
+.piece-T { background-color: #a347d1; }
+.piece-S { background-color: #38c548; }
+.piece-Z { background-color: #ed3545; }
+.piece-J { background-color: #3465ed; }
+.piece-L { background-color: #f59b23; }

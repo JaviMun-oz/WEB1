@@ -1,6 +1,7 @@
 const ROWS = 20;
 const COLUMNS = 10;
 const boardElement = document.querySelector("#board");
+const statusElement = document.querySelector("#status");
 
 // Each row is a separate array. Zero means an empty cell.
 const board = Array.from({ length: ROWS }, () => Array(COLUMNS).fill(0));
@@ -48,7 +49,8 @@ function createRandomPiece() {
     };
 }
 
-const activePiece = createRandomPiece();
+let activePiece = createRandomPiece();
+let gameOver = false;
 
 function canPlace(shape, x, y) {
     for (let row = 0; row < shape.length; row += 1) {
@@ -73,6 +75,7 @@ function canPlace(shape, x, y) {
 }
 
 function rotatePiece() {
+    if (gameOver) return;
     const shape = activePiece.shape;
     // Columns become rows, read from bottom to top for clockwise rotation.
     const rotated = Array.from({ length: shape[0].length }, (_, column) =>
@@ -103,12 +106,14 @@ function drawBoard() {
             const pieceRow = row - activePiece.y;
             const pieceColumn = column - activePiece.x;
             const isPieceCell =
+                !gameOver &&
                 pieceRow >= 0 && pieceRow < activePiece.shape.length &&
                 pieceColumn >= 0 && pieceColumn < activePiece.shape[pieceRow].length &&
                 activePiece.shape[pieceRow][pieceColumn] === 1;
 
-            if (board[row][column] !== 0 || isPieceCell) {
-                cell.classList.add("piece");
+            const pieceType = isPieceCell ? activePiece.type : board[row][column];
+            if (pieceType !== 0) {
+                cell.classList.add(`piece-${pieceType}`);
             }
 
             boardElement.appendChild(cell);
@@ -120,11 +125,32 @@ drawBoard();
 
 const DROP_INTERVAL = 500;
 
+function lockPiece() {
+    for (let row = 0; row < activePiece.shape.length; row += 1) {
+        for (let column = 0; column < activePiece.shape[row].length; column += 1) {
+            if (activePiece.shape[row][column] === 1) {
+                board[activePiece.y + row][activePiece.x + column] = activePiece.type;
+            }
+        }
+    }
+}
+
 function dropPiece() {
+    if (gameOver) return;
+
     if (canPlace(activePiece.shape, activePiece.x, activePiece.y + 1)) {
         activePiece.y += 1;
-        drawBoard();
+    } else {
+        lockPiece();
+        activePiece = createRandomPiece();
+
+        if (!canPlace(activePiece.shape, activePiece.x, activePiece.y)) {
+            gameOver = true;
+            clearInterval(fallTimer);
+            statusElement.textContent = "Game over! Reload the page to play again.";
+        }
     }
+    drawBoard();
 }
 
 const fallTimer = setInterval(dropPiece, DROP_INTERVAL);
@@ -135,6 +161,8 @@ document.addEventListener("keydown", (event) => {
     }
 
     event.preventDefault();
+
+    if (gameOver) return;
 
     if (event.key === "ArrowUp") {
         rotatePiece();
