@@ -3,6 +3,8 @@ const COLUMNS = 10;
 const boardElement = document.querySelector("#board");
 const statusElement = document.querySelector("#status");
 const scoreElement = document.querySelector("#score");
+const startButton = document.querySelector("#start");
+const restartButton = document.querySelector("#restart");
 
 // Each row is a separate array. Zero means an empty cell.
 const board = Array.from({ length: ROWS }, () => Array(COLUMNS).fill(0));
@@ -52,6 +54,8 @@ function createRandomPiece() {
 
 let activePiece = createRandomPiece();
 let gameOver = false;
+let started = false;
+let fallTimer = null;
 let score = 0;
 scoreElement.textContent = `Score: ${score}`;
 
@@ -78,7 +82,7 @@ function canPlace(shape, x, y) {
 }
 
 function rotatePiece() {
-    if (gameOver) return;
+    if (!started || gameOver) return;
     const shape = activePiece.shape;
     // Columns become rows, read from bottom to top for clockwise rotation.
     const rotated = Array.from({ length: shape[0].length }, (_, column) =>
@@ -109,7 +113,7 @@ function drawBoard() {
             const pieceRow = row - activePiece.y;
             const pieceColumn = column - activePiece.x;
             const isPieceCell =
-                !gameOver &&
+                started && !gameOver &&
                 pieceRow >= 0 && pieceRow < activePiece.shape.length &&
                 pieceColumn >= 0 && pieceColumn < activePiece.shape[pieceRow].length &&
                 activePiece.shape[pieceRow][pieceColumn] === 1;
@@ -156,7 +160,7 @@ function clearLines() {
 }
 
 function dropPiece() {
-    if (gameOver) return;
+    if (!started || gameOver) return;
 
     if (canPlace(activePiece.shape, activePiece.x, activePiece.y + 1)) {
         activePiece.y += 1;
@@ -168,14 +172,14 @@ function dropPiece() {
         if (!canPlace(activePiece.shape, activePiece.x, activePiece.y)) {
             gameOver = true;
             clearInterval(fallTimer);
-            statusElement.textContent = "Game over! Reload the page to play again.";
+            statusElement.textContent = "Game over! Press Restart to play again.";
         }
     }
     drawBoard();
 }
 
 function hardDrop() {
-    if (gameOver) return;
+    if (!started || gameOver) return;
 
     while (canPlace(activePiece.shape, activePiece.x, activePiece.y + 1)) {
         activePiece.y += 1;
@@ -184,7 +188,24 @@ function hardDrop() {
     dropPiece();
 }
 
-const fallTimer = setInterval(dropPiece, DROP_INTERVAL);
+function startGame() {
+    // Clear the previous timer so restarting never speeds up falling.
+    clearInterval(fallTimer);
+    board.forEach(row => row.fill(0));
+    score = 0;
+    scoreElement.textContent = `Score: ${score}`;
+    gameOver = false;
+    started = true;
+    activePiece = createRandomPiece();
+    statusElement.textContent = "";
+    startButton.hidden = true;
+    restartButton.hidden = false;
+    drawBoard();
+    fallTimer = setInterval(dropPiece, DROP_INTERVAL);
+}
+
+startButton.addEventListener("click", startGame);
+restartButton.addEventListener("click", startGame);
 
 document.addEventListener("keydown", (event) => {
     if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
@@ -193,7 +214,7 @@ document.addEventListener("keydown", (event) => {
 
     event.preventDefault();
 
-    if (gameOver) return;
+    if (!started || gameOver) return;
 
     if (event.key === "ArrowDown") {
         // Holding the key should not slam down subsequent pieces.
