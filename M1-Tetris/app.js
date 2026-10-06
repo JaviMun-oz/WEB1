@@ -2,6 +2,7 @@ const ROWS = 20;
 const COLUMNS = 10;
 const boardElement = document.querySelector("#board");
 const statusElement = document.querySelector("#status");
+const scoreElement = document.querySelector("#score");
 
 // Each row is a separate array. Zero means an empty cell.
 const board = Array.from({ length: ROWS }, () => Array(COLUMNS).fill(0));
@@ -51,6 +52,8 @@ function createRandomPiece() {
 
 let activePiece = createRandomPiece();
 let gameOver = false;
+let score = 0;
+scoreElement.textContent = `Score: ${score}`;
 
 function canPlace(shape, x, y) {
     for (let row = 0; row < shape.length; row += 1) {
@@ -135,6 +138,23 @@ function lockPiece() {
     }
 }
 
+function clearLines() {
+    let cleared = 0;
+
+    for (let row = ROWS - 1; row >= 0; row -= 1) {
+        if (board[row].every(cell => cell !== 0)) {
+            board.splice(row, 1);
+            board.unshift(Array(COLUMNS).fill(0));
+            cleared += 1;
+            // Check this position again: the row above has moved into it.
+            row += 1;
+        }
+    }
+
+    score += cleared * 100;
+    scoreElement.textContent = `Score: ${score}`;
+}
+
 function dropPiece() {
     if (gameOver) return;
 
@@ -142,6 +162,7 @@ function dropPiece() {
         activePiece.y += 1;
     } else {
         lockPiece();
+        clearLines();
         activePiece = createRandomPiece();
 
         if (!canPlace(activePiece.shape, activePiece.x, activePiece.y)) {
@@ -153,16 +174,32 @@ function dropPiece() {
     drawBoard();
 }
 
+function hardDrop() {
+    if (gameOver) return;
+
+    while (canPlace(activePiece.shape, activePiece.x, activePiece.y + 1)) {
+        activePiece.y += 1;
+    }
+    // At the landing position, dropPiece locks, clears lines, and spawns.
+    dropPiece();
+}
+
 const fallTimer = setInterval(dropPiece, DROP_INTERVAL);
 
 document.addEventListener("keydown", (event) => {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "ArrowUp") {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
         return;
     }
 
     event.preventDefault();
 
     if (gameOver) return;
+
+    if (event.key === "ArrowDown") {
+        // Holding the key should not slam down subsequent pieces.
+        if (!event.repeat) hardDrop();
+        return;
+    }
 
     if (event.key === "ArrowUp") {
         rotatePiece();
