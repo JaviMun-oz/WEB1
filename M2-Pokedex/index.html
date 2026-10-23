@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f3ea" />
+    <meta name="description" content="A field guide to the world of Pokémon." />
+    <title>Pokédex · Field Notes</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Pokédex home">
+          <span class="brand-mark" aria-hidden="true"><span></span></span>
+          <span>FIELD<span class="brand-light">NOTES</span></span>
+        </a>
+        <div class="edition"><span class="edition-dot"></span> NATIONAL FIELD GUIDE <span class="edition-year">№ 001</span></div>
+      </header>
+
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <p class="eyebrow">A living catalogue · Est. 1996</p>
+          <h1 id="page-title">Every Pokémon<br /><em>has a story.</em></h1>
+          <p class="intro-copy">A field guide for curious trainers. Search a species to explore its traits, habitats, and elemental affinities.</p>
+        </section>
+
+        <section class="search-section" aria-label="Pokémon search">
+          <form id="search-form" class="search-form" role="search">
+            <label class="search-label" for="pokemon-search">FIND A SPECIES</label>
+            <div class="search-control">
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <input id="pokemon-search" name="pokemon" type="search" placeholder="Try a name or Pokédex number…" autocomplete="off" />
+              <button type="submit">SEARCH <span aria-hidden="true">↗</span></button>
+            </div>
+            <p class="search-hint">A field guide is best explored one discovery at a time.</p>
+          </form>
+        </section>
+
+        <section class="record-layout" aria-label="Pokémon field record">
+          <article class="record-card" aria-labelledby="record-heading">
+            <div class="section-heading"><span class="section-index">01</span><h2 id="record-heading">SPECIES RECORD</h2><span class="rule"></span><span class="record-stamp">FIELD LOG</span></div>
+            <div id="pokemon-panel" class="pokemon-panel" aria-live="polite">
+              <div class="empty-art" aria-hidden="true">
+                <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+                <div class="pokeball"><span></span></div><span class="spark spark-a">✳</span><span class="spark spark-b">✦</span>
+                <span class="art-caption">SPECIMEN AWAITING DISCOVERY</span>
+              </div>
+              <div class="empty-copy">
+                <p class="empty-kicker">YOUR NEXT DISCOVERY</p>
+                <h3 id="panel-title">The wild is<br /><em>full of wonder.</em></h3>
+                <p id="panel-description">Enter a Pokémon’s name or number above to open its field record. Its portrait, traits, and type matchups will appear here.</p>
+                <span class="record-meta"><span class="meta-dot"></span> NO SPECIMEN SELECTED</span>
+              </div>
+            </div>
+          </article>
+
+          <aside class="effectiveness-card" aria-labelledby="effectiveness-heading">
+            <div class="section-heading"><span class="section-index">02</span><h2 id="effectiveness-heading">TYPE NOTES</h2></div>
+            <div id="effectiveness-panel" class="effectiveness-panel" aria-live="polite">
+              <div class="type-glyph" aria-hidden="true">◈</div>
+              <p class="empty-kicker">ELEMENTAL FIELD NOTES</p>
+              <h3>Know your<br /><em>surroundings.</em></h3>
+              <p>Type strengths and vulnerabilities will be charted here once a species is selected.</p>
+              <div class="legend"><span><i class="legend-dot strong"></i> ADVANTAGE</span><span><i class="legend-dot weak"></i> VULNERABILITY</span></div>
+            </div>
+          </aside>
+        </section>
+
+        <p id="app-status" class="sr-only" role="status" aria-live="polite"></p>
+      </main>
+
+      <footer><span>OBSERVE WITH CURIOSITY.</span><span>POKÉDEX FIELD NOTES <b>·</b> WEB DEV MISSION 02</span><span>✳ &nbsp; KEEP EXPLORING</span></footer>
+    </div>
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>
