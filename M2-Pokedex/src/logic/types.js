@@ -6,9 +6,12 @@ export const POKEMON_TYPES = [
 /** Keep only the type response data needed by the calculator and species list. */
 export function normalizeTypeResponse(data) {
   const relations = data?.damage_relations ?? {};
-  const pokemon = (data?.pokemon ?? [])
-    .map(({ pokemon: entry }) => {
-      const id = Number(entry?.url?.match(/\/pokemon\/(\d+)\/?$/)?.[1]);
+  const relationNames = (relation) => Array.isArray(relation) ? relation.map((entry) => entry?.name).filter((name) => typeof name === 'string') : [];
+  const pokemon = (Array.isArray(data?.pokemon) ? data.pokemon : [])
+    .map((item) => {
+      const entry = item?.pokemon;
+      const url = typeof entry?.url === 'string' ? entry.url : '';
+      const id = Number(url.match(/\/pokemon\/(\d+)\/?$/)?.[1]);
       return entry?.name ? { name: entry.name, id: Number.isFinite(id) ? id : null } : null;
     })
     .filter(Boolean)
@@ -22,16 +25,18 @@ export function normalizeTypeResponse(data) {
     name: data?.name ?? '',
     pokemon,
     damageRelations: {
-      doubleFrom: (relations.double_damage_from ?? []).map(({ name }) => name),
-      halfFrom: (relations.half_damage_from ?? []).map(({ name }) => name),
-      noFrom: (relations.no_damage_from ?? []).map(({ name }) => name),
+      doubleFrom: relationNames(relations.double_damage_from),
+      halfFrom: relationNames(relations.half_damage_from),
+      noFrom: relationNames(relations.no_damage_from),
     },
   };
 }
 
 /** Combine defensive type multipliers, returning one row for each attacking type. */
 export function calculateTypeEffectiveness(typeRecords) {
-  const normalized = typeRecords.map((record) => record.damageRelations ? record : normalizeTypeResponse(record));
+  const normalized = (Array.isArray(typeRecords) ? typeRecords : [])
+    .filter((record) => record && typeof record === 'object')
+    .map((record) => record.damageRelations ? record : normalizeTypeResponse(record));
   return POKEMON_TYPES.map((attackingType) => {
     const multiplier = normalized.reduce((value, defendingType) => {
       const relations = defendingType.damageRelations;
@@ -46,8 +51,8 @@ export function calculateTypeEffectiveness(typeRecords) {
 
 /** One-type list, or intersection when two types are selected. */
 export function getPokemonForTypes(typeRecords) {
-  if (!typeRecords.length) return [];
-  const lists = typeRecords.map((record) => record.pokemon);
+  if (!Array.isArray(typeRecords) || !typeRecords.length) return [];
+  const lists = typeRecords.map((record) => Array.isArray(record?.pokemon) ? record.pokemon : []);
   if (lists.length === 1) return lists[0];
   const sharedNames = lists.slice(1).reduce((names, list) => {
     const currentNames = new Set(list.map(({ name }) => name));

@@ -17,19 +17,19 @@ let activeTypeController;
 initializeTypeCalculator(POKEMON_TYPES);
 
 async function updateTypeCalculator(types) {
-  const selectedTypes = [...new Set(types.filter(Boolean))].slice(0, 2);
+  const selectedTypes = [...new Set((Array.isArray(types) ? types : []).filter(Boolean))].slice(0, 2);
   const requestId = ++activeTypeRequestId;
   activeTypeController?.abort();
 
-  if (!selectedTypes.length) {
-    renderTypeError('Choose one or two types to see their matchups and associated Pokemon.');
-    return false;
-  }
-
   const controller = new AbortController();
   activeTypeController = controller;
-  renderTypeLoading(selectedTypes);
   try {
+    if (!selectedTypes.length) {
+      renderTypeError('Choose one or two types to see their matchups and associated Pokemon.');
+      return false;
+    }
+
+    renderTypeLoading(selectedTypes);
     const responses = await getTypesByName(selectedTypes, { signal: controller.signal });
     if (requestId !== activeTypeRequestId) return;
     const records = responses.map(normalizeTypeResponse);
@@ -46,7 +46,7 @@ async function updateTypeCalculator(types) {
   }
 }
 
-form.addEventListener('submit', async (event) => {
+async function handlePokemonSearch(event) {
   event.preventDefault();
   const query = searchInput.value.trim();
   if (!query) {
@@ -77,6 +77,13 @@ form.addEventListener('submit', async (event) => {
     renderError(error.message);
     status.textContent = error.message;
   }
+}
+
+form.addEventListener('submit', (event) => {
+  void handlePokemonSearch(event).catch((error) => {
+    renderError('Something went wrong while opening this field record. Please try again.');
+    status.textContent = error?.message || 'Unexpected search error.';
+  });
 });
 
 typePanel.addEventListener('change', (event) => {
@@ -93,7 +100,10 @@ typePanel.addEventListener('change', (event) => {
     setTypeSelections([selections[1]]);
     selections = getTypeSelections();
   }
-  updateTypeCalculator(selections);
+  void updateTypeCalculator(selections).catch((error) => {
+    renderTypeError('Something went wrong while calculating type matchups. Please try again.');
+    status.textContent = error?.message || 'Unexpected type calculator error.';
+  });
 });
 
 speciesFilter.addEventListener('input', () => filterPokemonList(speciesFilter.value));

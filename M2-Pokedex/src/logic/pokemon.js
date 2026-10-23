@@ -1,6 +1,6 @@
 /** Convert a PokéAPI response into the clean data shape used by the interface. */
 export function normalizePokemon(data) {
-  const sprites = data?.sprites ?? {};
+  const sprites = data?.sprites && typeof data.sprites === 'object' ? data.sprites : {};
   const images = [
     sprites.other?.['official-artwork']?.front_default,
     sprites.other?.home?.front_default,
@@ -13,12 +13,14 @@ export function normalizePokemon(data) {
     images,
     height: Number.isFinite(data?.height) ? data.height / 10 : null,
     weight: Number.isFinite(data?.weight) ? data.weight / 10 : null,
-    types: (data?.types ?? []).map(({ type }) => type?.name).filter(Boolean),
-    abilities: (data?.abilities ?? [])
-      .map(({ ability }) => ability?.name)
-      .filter(Boolean),
-    stats: (data?.stats ?? [])
-      .map(({ base_stat: value, stat }) => ({ name: stat?.name, value }))
+    types: (Array.isArray(data?.types) ? data.types : [])
+      .map((entry) => entry?.type?.name)
+      .filter((name) => typeof name === 'string' && name.length > 0),
+    abilities: (Array.isArray(data?.abilities) ? data.abilities : [])
+      .map((entry) => entry?.ability?.name)
+      .filter((name) => typeof name === 'string' && name.length > 0),
+    stats: (Array.isArray(data?.stats) ? data.stats : [])
+      .map((entry) => ({ name: entry?.stat?.name, value: entry?.base_stat }))
       .filter(({ name, value }) => name && Number.isFinite(value)),
   };
 }
