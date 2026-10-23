@@ -147,6 +147,40 @@ export async function getPokemonByName(query, { signal } = {}) {
   }
 }
 
+/** Retrieve every available form for the species that owns a Pokémon record. */
+export async function getPokemonVarieties(pokemonRecord, { signal } = {}) {
+  const speciesName = pokemonRecord?.species?.name;
+  if (typeof speciesName !== 'string' || !speciesName) {
+    throw makeError('This Pokémon record does not include its species information.', 'invalid-data');
+  }
+
+  const species = await fetchJSON(`${SPECIES_API_URL}${encodeURIComponent(speciesName)}`, { signal, validate: isSpeciesPayload });
+  const varieties = species.varieties
+    .filter((variety) => isObject(variety) && isObject(variety.pokemon)
+      && typeof variety.pokemon.name === 'string'
+      && typeof variety.pokemon.url === 'string')
+    .map((variety) => ({
+      name: variety.pokemon.name,
+      isDefault: variety.is_default === true,
+      url: variety.pokemon.url,
+    }));
+
+  if (!varieties.length) {
+    throw makeError(`No available forms were listed for ${speciesName}.`, 'invalid-data');
+  }
+
+  const results = await Promise.allSettled(varieties.map(({ url }) =>
+    fetchJSON(url, { signal, validate: isPokemonPayload }),
+  ));
+
+  return {
+    speciesName,
+    varieties: results.map((result, index) => result.status === 'fulfilled'
+      ? { name: varieties[index].name, isDefault: varieties[index].isDefault, pokemon: result.value, error: null }
+      : { name: varieties[index].name, isDefault: varieties[index].isDefault, pokemon: null, error: result.reason?.message ?? 'Form data could not be loaded.' }),
+  };
+}
+
 /** Fetch one or two type records together for calculations and membership lists. */
 export function getTypesByName(names, { signal } = {}) {
   const uniqueNames = [...new Set((Array.isArray(names) ? names : []).map((name) => String(name).trim().toLowerCase()).filter(Boolean))];
