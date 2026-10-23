@@ -1,9 +1,16 @@
 const panel = document.querySelector('#pokemon-panel');
-const effectiveness = document.querySelector('#effectiveness-panel');
 const status = document.querySelector('#app-status');
+const primaryType = document.querySelector('#type-select-primary');
+const secondaryType = document.querySelector('#type-select-secondary');
+const typeMessage = document.querySelector('#type-chart-message');
+const typeChart = document.querySelector('#type-chart');
+const speciesFilter = document.querySelector('#species-filter');
+const speciesList = document.querySelector('#species-list');
+const speciesCount = document.querySelector('#species-count');
 const typeColors = { normal: '#a8a77a', fire: '#ee8130', water: '#6390f0', electric: '#f7d02c', grass: '#7ac74c', ice: '#96d9d6', fighting: '#c22e28', poison: '#a33ea1', ground: '#e2bf65', flying: '#a98ff3', psychic: '#f95587', bug: '#a6b91a', rock: '#b6a136', ghost: '#735797', dragon: '#6f35fc', dark: '#705746', steel: '#b7b7ce', fairy: '#d685ad' };
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
+let currentSpecies = [];
 
 function typePill(type) {
   const color = typeColors[type] ?? '#777';
@@ -26,12 +33,81 @@ export function renderError(message) {
   panel.innerHTML = `<div class="state-message error-state"><span class="state-symbol">!</span><p>${escapeHtml(message)}</p></div>`;
 }
 
-export function renderTypeNotes() {
-  effectiveness.innerHTML = `<div class="type-glyph" aria-hidden="true">◈</div>
-    <p class="empty-kicker">ELEMENTAL FIELD NOTES</p>
-    <h3>Know your<br /><em>surroundings.</em></h3>
-    <p>Type strengths and vulnerabilities will be charted here in a future field update.</p>
-    <div class="legend"><span><i class="legend-dot strong"></i> ADVANTAGE</span><span><i class="legend-dot weak"></i> VULNERABILITY</span></div>`;
+export function initializeTypeCalculator(types) {
+  for (const select of [primaryType, secondaryType]) {
+    for (const type of types) {
+      const option = document.createElement('option');
+      option.value = type;
+      option.textContent = capitalize(type);
+      select.append(option);
+    }
+  }
+}
+
+export function setTypeSelections(types) {
+  primaryType.value = types[0] ?? '';
+  secondaryType.value = types[1] ?? '';
+}
+
+export function getTypeSelections() {
+  return [primaryType.value, secondaryType.value].filter(Boolean);
+}
+
+export function renderTypeLoading(types) {
+  currentSpecies = [];
+  speciesFilter.value = '';
+  speciesFilter.disabled = true;
+  speciesCount.textContent = '...';
+  speciesList.innerHTML = '<p>Loading the species list...</p>';
+  typeChart.innerHTML = '<div class="chart-loading"><span class="loader"></span></div>';
+  typeMessage.textContent = `Looking up ${types.join(' and ')} type relations...`;
+}
+
+export function renderTypeError(message) {
+  currentSpecies = [];
+  speciesFilter.disabled = true;
+  speciesCount.textContent = '0';
+  speciesList.innerHTML = '<p>Species are unavailable until the type data loads.</p>';
+  typeChart.innerHTML = '';
+  typeMessage.textContent = message;
+}
+
+export function renderTypeResults(records, effectivenessRows, pokemon) {
+  const selectedNames = records.map(({ name }) => capitalize(name));
+  typeMessage.textContent = `Defending type${records.length > 1 ? 's' : ''}: ${selectedNames.join(' + ')}.`;
+  const groups = [
+    { label: 'VULNERABLE', predicate: ({ multiplier }) => multiplier >= 2, className: 'matchup-weak' },
+    { label: 'IMMUNE', predicate: ({ multiplier }) => multiplier === 0, className: 'matchup-immune' },
+    { label: 'RESISTANT', predicate: ({ multiplier }) => multiplier > 0 && multiplier < 1, className: 'matchup-resistant' },
+    { label: 'NEUTRAL', predicate: ({ multiplier }) => multiplier === 1, className: 'matchup-neutral' },
+  ];
+  typeChart.innerHTML = groups.map(({ label, predicate, className }) => {
+    const rows = effectivenessRows.filter(predicate);
+    if (!rows.length) return '';
+    return `<section class="matchup-group ${className}"><h4>${label}</h4><div class="matchup-types">${rows.map(({ type, multiplier }) => `<span class="matchup-type">${typePill(type)}<b>×${multiplier}</b></span>`).join('')}</div></section>`;
+  }).join('');
+
+  currentSpecies = pokemon;
+  speciesFilter.disabled = !pokemon.length;
+  speciesFilter.value = '';
+  renderSpeciesList('');
+}
+
+function renderSpeciesList(query) {
+  const normalizedQuery = query.trim().toLowerCase().replaceAll(' ', '-');
+  const visiblePokemon = currentSpecies.filter(({ name }) => name.includes(normalizedQuery));
+  if (!currentSpecies.length) {
+    speciesList.innerHTML = '<p>No Pokemon are listed for this selection.</p>';
+  } else if (!visiblePokemon.length) {
+    speciesList.innerHTML = '<p>No matches. Try another name.</p>';
+  } else {
+    speciesList.innerHTML = visiblePokemon.map(({ id, name }) => `<div class="species-entry"><span>${id == null ? '—' : `#${String(id).padStart(4, '0')}`}</span><b>${escapeHtml(capitalize(name.replaceAll('-', ' ')))}</b></div>`).join('');
+  }
+  speciesCount.textContent = normalizedQuery ? `${visiblePokemon.length}/${currentSpecies.length}` : String(currentSpecies.length);
+}
+
+export function filterPokemonList(query) {
+  renderSpeciesList(query);
 }
 
 export function renderPokemon(pokemon) {
@@ -48,7 +124,7 @@ export function renderPokemon(pokemon) {
     : '<p class="no-stats">Base stats are unavailable for this record.</p>';
 
   panel.innerHTML = `<div class="pokemon-visual">${artwork}<span class="specimen-number">NO. ${number}</span></div>
-    <div class="pokemon-details"><p class="empty-kicker">SPECIES RECORD · NO. ${number}</p><h3>${escapeHtml(capitalize(pokemon.name))}</h3>
+    <div class="pokemon-details"><p class="empty-kicker">SPECIES RECORD · NO. ${number}</p><h3>${escapeHtml(capitalize(pokemon.name.replaceAll('-', ' ')))}</h3>
     <div class="type-list">${pokemon.types.length ? pokemon.types.map(typePill).join('') : '<span class="no-stats">Type details unavailable</span>'}</div>
     ${dimensions ? `<p class="pokemon-facts">${dimensions}</p>` : ''}
     <div class="ability-notes"><span>KNOWN ABILITIES</span><p>${pokemon.abilities.map((ability) => escapeHtml(capitalize(ability.replaceAll('-', ' ')))).join(' · ') || 'Not recorded'}</p></div>
@@ -64,10 +140,7 @@ export function renderPokemon(pokemon) {
         image.src = pokemon.images[nextIndex];
       } else {
         image.replaceWith(Object.assign(document.createElement('div'), {
-          className: 'missing-art',
-          role: 'img',
-          ariaLabel: 'Artwork unavailable',
-          textContent: '✳',
+          className: 'missing-art', role: 'img', ariaLabel: 'Artwork unavailable', textContent: '✳',
         }));
       }
     });

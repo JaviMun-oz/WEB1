@@ -59,9 +59,17 @@
             <div id="effectiveness-panel" class="effectiveness-panel" aria-live="polite">
               <div class="type-glyph" aria-hidden="true">◈</div>
               <p class="empty-kicker">ELEMENTAL FIELD NOTES</p>
-              <h3>Know your<br /><em>surroundings.</em></h3>
-              <p>Type strengths and vulnerabilities will be charted here once a species is selected.</p>
-              <div class="legend"><span><i class="legend-dot strong"></i> ADVANTAGE</span><span><i class="legend-dot weak"></i> VULNERABILITY</span></div>
+              <label class="type-select-label" for="type-select-primary">DEFENDING TYPE</label>
+              <select id="type-select-primary" class="type-select"><option value="">Choose a type</option></select>
+              <label class="type-select-label" for="type-select-secondary">SECOND TYPE <span>OPTIONAL</span></label>
+              <select id="type-select-secondary" class="type-select"><option value="">No second type</option></select>
+              <p id="type-chart-message" class="type-chart-message">Search for a Pokémon or choose a type above to explore its matchups.</p>
+              <div id="type-chart" class="type-chart"></div>
+              <section class="type-species" aria-labelledby="species-list-heading">
+                <div class="species-list-heading"><h3 id="species-list-heading">POKÉMON WITH TYPE</h3><span id="species-count">0</span></div>
+                <input id="species-filter" class="species-filter" type="search" placeholder="Filter Pokémon…" aria-label="Filter Pokémon by name" disabled />
+                <div id="species-list" class="species-list"><p>Choose a type to see its Pokémon.</p></div>
+              </section>
             </div>
           </aside>
         </section>
