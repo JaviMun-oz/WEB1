@@ -69,10 +69,20 @@ Using `localStorage`, the application caches successfully retrieved information 
 The application is coordinated by `app.js`, which handles user interactions and connects the different modules. The user searches for a Pokémon using its name or Pokédex number. The search event is handled by `app.js`, then `pokeapi.js` retrieves the information from PokéAPI or the cache. `pokemon.js` processes the data, and `types.js` handles type calculations. `render.js` updates the page with the Pokémon's information. Selecting an alternate form or manually changing the type lookup triggers another update using the relevant modules.
 
 
+## AI Overview
 
+I used the Codex extension within VS Code as a programming assistant to develop the application in phases.
 
+Example prompts:
 
+"Implement the core Pokédex functionality using the public PokéAPI at https://pokeapi.co/api/v2/."
 
+"Implement an interactive Pokémon type-effectiveness calculator in the existing Pokédex application."
+
+(Both prompts included additional requirements, which have been omitted here for clarity.)
+
+I did not write any of the application's code manually. However, I reviewed the implemented features and tested the application to check that it worked as intended.
+I also used ChatGPT to help plan the development phases, review the assignment requirements, and understand the generated code while preparing this README.
 
 
 
