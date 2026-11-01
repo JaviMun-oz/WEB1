@@ -1,25 +1,25 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { getPokemonByName, getPokemonVarieties } from './api/pokeapi.js';
+import { getPokemonByName } from './api/pokeapi.js';
 import { normalizePokemon } from './logic/pokemon.js';
+import usePokemonVarieties from './hooks/usePokemonVarieties.js';
 import Header from './components/Header.jsx';
 import SearchBar from './components/SearchBar.jsx';
 import PokemonCard from './components/PokemonCard.jsx';
+import PokemonForms from './components/PokemonForms.jsx';
 import Footer from './components/Footer.jsx';
 import TypeCalculator from './components/TypeCalculator.jsx';
-import VarietySelector from './components/VarietySelector.jsx';
 import './style.css';
 
 function App() {
   const [query, setQuery] = useState('');
-  const [pokemon, setPokemon] = useState(null);
+  const [pokemonRecord, setPokemonRecord] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedTypes, setSelectedTypes] = useState([]);
-  const [varieties, setVarieties] = useState([]);
-  const [varietiesLoading, setVarietiesLoading] = useState(false);
-  const [varietiesError, setVarietiesError] = useState('');
   const activeRequest = useRef(null);
+  const pokemon = useMemo(() => pokemonRecord ? normalizePokemon(pokemonRecord) : null, [pokemonRecord]);
+  const { varieties, loading: varietiesLoading, error: varietiesError } = usePokemonVarieties(pokemonRecord);
 
   useEffect(() => () => activeRequest.current?.abort(), []);
 
@@ -37,46 +37,27 @@ function App() {
     activeRequest.current = controller;
     setLoading(true);
     setError('');
-    setPokemon(null);
-    setVarieties([]);
-    setVarietiesError('');
-    setVarietiesLoading(true);
+    setPokemonRecord(null);
 
     try {
       const record = await getPokemonByName(searchTerm, { signal: controller.signal });
       if (!controller.signal.aborted) {
-        const normalizedPokemon = normalizePokemon(record);
-        setPokemon(normalizedPokemon);
-        setSelectedTypes(normalizedPokemon.types.slice(0, 2));
-
-        // Load forms independently so the record and type notes can appear first.
-        getPokemonVarieties(record, { signal: controller.signal })
-          .then((result) => {
-            if (!controller.signal.aborted) {
-              setVarieties(result.varieties.map((variety) => ({
-                ...variety,
-                summary: variety.pokemon ? normalizePokemon(variety.pokemon) : null,
-              })));
-            }
-          })
-          .catch((varietyError) => {
-            if (!controller.signal.aborted && varietyError.name !== 'AbortError') setVarietiesError(varietyError.message);
-          })
-          .finally(() => {
-            if (!controller.signal.aborted) setVarietiesLoading(false);
-          });
+        setPokemonRecord(record);
+        setSelectedTypes(normalizePokemon(record).types.slice(0, 2));
       }
     } catch (searchError) {
-      if (searchError.name !== 'AbortError') setError(searchError.message || 'The Pokémon record could not be loaded.');
-      if (!controller.signal.aborted) setVarietiesLoading(false);
+      if (!controller.signal.aborted && searchError.name !== 'AbortError') {
+        setError(searchError.message || 'The Pokémon record could not be loaded.');
+      }
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
   }
 
-  function selectVariety(selectedPokemon) {
-    setPokemon(selectedPokemon);
-    setSelectedTypes(selectedPokemon.types.slice(0, 2));
+  function selectForm(record) {
+    // The selected raw form drives both normalized record details and its defending types.
+    setPokemonRecord(record);
+    setSelectedTypes(normalizePokemon(record).types.slice(0, 2));
   }
 
   return (
@@ -94,7 +75,7 @@ function App() {
           <PokemonCard pokemon={pokemon} loading={loading} error={error} />
           <TypeCalculator selectedTypes={selectedTypes} onTypesChange={setSelectedTypes} />
         </section>
-        <VarietySelector varieties={varieties} loading={varietiesLoading} error={varietiesError} selectedId={pokemon?.id} onSelect={selectVariety} />
+        <PokemonForms varieties={varieties} loading={varietiesLoading} error={varietiesError} selectedId={pokemon?.id} onSelect={selectForm} />
       </main>
       <Footer />
     </div>
