@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { getPokemonByName } from './api/pokeapi.js';
+import { getPokemonByName, getPokemonVarieties } from './api/pokeapi.js';
 import { normalizePokemon } from './logic/pokemon.js';
 import Header from './components/Header.jsx';
 import SearchBar from './components/SearchBar.jsx';
 import PokemonCard from './components/PokemonCard.jsx';
 import Footer from './components/Footer.jsx';
+import TypeCalculator from './components/TypeCalculator.jsx';
+import VarietySelector from './components/VarietySelector.jsx';
 import './style.css';
 
 function App() {
@@ -13,6 +15,10 @@ function App() {
   const [pokemon, setPokemon] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [varieties, setVarieties] = useState([]);
+  const [varietiesLoading, setVarietiesLoading] = useState(false);
+  const [varietiesError, setVarietiesError] = useState('');
   const activeRequest = useRef(null);
 
   useEffect(() => () => activeRequest.current?.abort(), []);
@@ -32,15 +38,45 @@ function App() {
     setLoading(true);
     setError('');
     setPokemon(null);
+    setVarieties([]);
+    setVarietiesError('');
+    setVarietiesLoading(true);
 
     try {
       const record = await getPokemonByName(searchTerm, { signal: controller.signal });
-      if (!controller.signal.aborted) setPokemon(normalizePokemon(record));
+      if (!controller.signal.aborted) {
+        const normalizedPokemon = normalizePokemon(record);
+        setPokemon(normalizedPokemon);
+        setSelectedTypes(normalizedPokemon.types.slice(0, 2));
+
+        // Load forms independently so the record and type notes can appear first.
+        getPokemonVarieties(record, { signal: controller.signal })
+          .then((result) => {
+            if (!controller.signal.aborted) {
+              setVarieties(result.varieties.map((variety) => ({
+                ...variety,
+                summary: variety.pokemon ? normalizePokemon(variety.pokemon) : null,
+              })));
+            }
+          })
+          .catch((varietyError) => {
+            if (!controller.signal.aborted && varietyError.name !== 'AbortError') setVarietiesError(varietyError.message);
+          })
+          .finally(() => {
+            if (!controller.signal.aborted) setVarietiesLoading(false);
+          });
+      }
     } catch (searchError) {
       if (searchError.name !== 'AbortError') setError(searchError.message || 'The Pokémon record could not be loaded.');
+      if (!controller.signal.aborted) setVarietiesLoading(false);
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
+  }
+
+  function selectVariety(selectedPokemon) {
+    setPokemon(selectedPokemon);
+    setSelectedTypes(selectedPokemon.types.slice(0, 2));
   }
 
   return (
@@ -56,7 +92,9 @@ function App() {
         <SearchBar query={query} onQueryChange={setQuery} onSubmit={handleSearch} />
         <section className="record-layout" aria-label="Pokémon field record">
           <PokemonCard pokemon={pokemon} loading={loading} error={error} />
+          <TypeCalculator selectedTypes={selectedTypes} onTypesChange={setSelectedTypes} />
         </section>
+        <VarietySelector varieties={varieties} loading={varietiesLoading} error={varietiesError} selectedId={pokemon?.id} onSelect={selectVariety} />
       </main>
       <Footer />
     </div>
