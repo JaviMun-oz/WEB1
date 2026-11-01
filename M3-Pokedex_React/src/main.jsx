@@ -9,6 +9,7 @@ import PokemonCard from './components/PokemonCard.jsx';
 import PokemonForms from './components/PokemonForms.jsx';
 import Footer from './components/Footer.jsx';
 import TypeCalculator from './components/TypeCalculator.jsx';
+import useTheme from './hooks/useTheme.js';
 import './style.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedTypes, setSelectedTypes] = useState([]);
+  const { theme, toggleTheme } = useTheme();
   const activeRequest = useRef(null);
   const pokemon = useMemo(() => pokemonRecord ? normalizePokemon(pokemonRecord) : null, [pokemonRecord]);
   const { varieties, loading: varietiesLoading, error: varietiesError } = usePokemonVarieties(pokemonRecord);
@@ -62,7 +64,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header />
+      <Header theme={theme} onToggleTheme={toggleTheme} />
       <main>
         <section className="intro" aria-labelledby="page-title">
           <p className="eyebrow">A living catalogue · Est. 1996</p>

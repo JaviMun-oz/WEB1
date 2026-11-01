@@ -6,5 +6,5 @@ const typeColors = {
 };
 
 export default function TypeBadge({ type }) {
-  return <span className="type-pill" style={{ '--type-color': typeColors[type] ?? '#777' }}>{type}</span>;
+  return <span className={`type-pill type-${type}`} style={{ '--type-color': typeColors[type] ?? '#777' }}>{type}</span>;
 }
