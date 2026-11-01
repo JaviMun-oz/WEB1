@@ -1,9 +1,9 @@
 export const API_BASE_URL = 'https://pokeapi.co/api/v2/pokemon/';
 export const SPECIES_API_URL = 'https://pokeapi.co/api/v2/pokemon-species/';
 export const TYPE_API_URL = 'https://pokeapi.co/api/v2/type/';
-export const CACHE_PREFIX = 'pokedex-cache:v1:';
-export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-export const REQUEST_TIMEOUT_MS = 12_000;
+const CACHE_PREFIX = 'pokedex-cache:v1:';
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 12_000;
 
 export const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 export const makeError = (message, kind, status, options) => Object.assign(new Error(message, options), { kind, status });
